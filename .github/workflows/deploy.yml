@@ -35,9 +35,13 @@ jobs:
         with:
           host: ${{ secrets.EC2_BACKEND_HOST }}
           username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendev2f:latest
             sudo docker stop competent_herschel || true
             sudo docker rm competent_herschel || true
-            sudo docker run -d -p 3001:3001 --name competent_herschel ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendev2f:latest
+            sudo docker run -d \
+              -p 3001:3001 \
+              --name competent_herschel \
+              --restart unless-stopped \
+              ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendev2f:latest
