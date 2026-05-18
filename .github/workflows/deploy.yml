@@ -1,0 +1,54 @@
+name: Deploy Backend Ev2F to AWS
+
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      - name: Iniciar sesión en Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets::DOCKERHUB_USERNAME }}
+          password: ${{ secrets::DOCKERHUB_TOKEN }}
+
+      - name: Compilar y subir Imagen de Docker
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets::DOCKERHUB_USERNAME }}/tienda-backendEv2F:latest
+
+  deploy-to-aws:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Desplegar en Instancia EC2 Privada mediante SSH Bastion
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets::AWS_HOST }}
+          username: ec2-user
+          key: ${{ secrets::AWS_SSH_KEY }}
+          script: |
+            ssh -o StrictHostKeyChecking=no ec2-user@10.0.140.120 << 'EOF'
+              sudo docker pull ${{ secrets::DOCKERHUB_USERNAME }}/tienda-backendEv2F:latest              
+              sudo docker stop tienda_backEv2F || true
+              sudo docker rm tienda_backEv2F || true  
+              sudo docker run -d \
+                --name tienda_backEv2F \
+                -p 3001:3001 \
+                -e DB_HOST=10.0.157.73 \
+                -e DB_USER=root \
+                -e DB_PASSWORD=password \
+                -e DB_NAME=tienda_perritosEv2F \
+                -e DB_PORT=3306 \
+                --restart always \
+                ${{ secrets::DOCKERHUB_USERNAME }}/tienda-backendEv2F:latest
+            EOF
