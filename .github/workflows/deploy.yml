@@ -24,7 +24,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendEv2F:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendev2f:latest
 
   deploy-to-aws:
     needs: build-and-push
@@ -38,7 +38,7 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             ssh -o StrictHostKeyChecking=no ec2-user@10.0.140.120 << 'EOF'
-              sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendEv2F:latest
+              sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendev2f:latest
               sudo docker stop tienda_backEv2F || true
               sudo docker rm tienda_backEv2F || true
               sudo docker run -d \
@@ -50,5 +50,5 @@ jobs:
                 -e DB_NAME=tienda_perritosEv2F \
                 -e DB_PORT=3306 \
                 --restart always \
-                ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendEv2F:latest
+                ${{ secrets.DOCKERHUB_USERNAME }}/tienda-backendev2f:latest
             EOF
